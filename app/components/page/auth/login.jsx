@@ -309,13 +309,11 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
   const handleLoginSubmit = async (data,event) => {
   
     event.preventDefault(); 
-    console.log(data.emailLogin + " " + data.passwordLogin);
-
     if(data){
 
 
-      const res = await fetch('/api/signin', {
-        method: 'POST',  // POST request
+      const res = await fetch('/api/login', {
+        method: 'POST',  
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
            email: data.emailLogin.toString(),
@@ -326,12 +324,12 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
       });
 
       if(res.ok){
-        const token = await res.json();
-        Cookies.set('token', token.message);
 
-
-
-
+        window.location.reload();
+      }
+      else{
+        const result = await res.json();
+        console.log(result.message)
       }
 
      

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useParams, useRouter, notFound } from "next/navigation";
 import _ from "lodash";
 //Components
-import  AnimeContainer  from "@/app/components/index/animeContainer";
+import  AnimeContainer  from "@/app/components/page/main/animeContainer";
 
 const Main = () => {
   const { query } = useParams();

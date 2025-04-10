@@ -1,8 +1,8 @@
 import { verify } from 'jsonwebtoken';
 
-// This route will handle fetching user information from the token
+
 export async function GET(req) {
-  // Extract the token from the Authorization header
+
   const token = req.headers.get('Authorization')?.split(' ')[1]; // Assuming the token is in the form: "Bearer <token>"
   
   if (!token) {
@@ -14,11 +14,16 @@ export async function GET(req) {
     const decoded = verify(token, process.env.JWT_SECRET);
 
     // The decoded token should contain user information like userId and email
-    const { userId, email } = decoded;
+    console.log(decoded)
+    const { userId, userName, email } = decoded;
 
     // Here you can optionally fetch more user data from your database using userId if needed
     return new Response(
-      JSON.stringify({ userId, email }), 
+      JSON.stringify({ userId: userId, 
+                       userName: userName,
+                       email: email,
+
+                       }), 
       { status: 200 }
     );
   } catch (err) {

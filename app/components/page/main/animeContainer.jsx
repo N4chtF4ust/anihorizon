@@ -2,7 +2,7 @@
 import React from 'react'
 import LoadingSpinner from "@/app/components/loading/loading";
 import Pagination from "@/app/components/pagination/pagination";
-import  AnimeCard  from "@/app/components/index/animeCard";
+import  AnimeCard  from "@/app/components/page/main/animeCard";
 
 function AnimeContainer({loading,animeList,page}) {
   return (

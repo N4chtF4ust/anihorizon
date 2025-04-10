@@ -3,34 +3,38 @@
 import { useRef, useState,useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Menu from "@/app/components/index/menu";
-import Login from "@/app/components/index/login";
+import Menu from "@/app/components/page/navigation/menu";
+import UserMenu from "@/app/components/page/navigation/UserMenu";
+import Login from "@/app/components/page/auth/login";
 import LoadingSpinner from "@/app/components/loading/loading";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass,faClapperboard,faTv,faHourglass } from '@fortawesome/free-solid-svg-icons';
 import debounce from 'lodash.debounce';
 import Cookies from 'js-cookie';
-import jwt from 'jsonwebtoken';
-
-
 
 
 const Nav = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [user, setUser] = useState(null); // This will store user data (userId, email)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);//will store to toggle the menu
+  const [isUserLoginOpen, setIsUserLoginOpen] = useState(false);//will store to toggle the user menu
+  const [isLoginOpen, setIsLoginOpen] = useState(false); // will store to toggle the  Login
+  const [isSearchOpen, setIsSearchOpen] = useState(false); // will store to toggle the search icon
+  const [user, setUser] = useState(""); // This will store user data (userId, email)
+  const [tokenVerified, setTokenVerified] = useState(false); // This will store user data (userId, email)
 
-  
-
-  
 
   const menuPop = () => {
     setIsMenuOpen(!isMenuOpen);
+    setIsUserLoginOpen(false);
   };
 
   const loginClick = () => {
+    setIsMenuOpen(false);
+    setIsLoginOpen(!isLoginOpen);
+  };
+
+  const userClick = () => {
+    setIsUserLoginOpen(!isUserLoginOpen);
     setIsMenuOpen(false);
     setIsLoginOpen(!isLoginOpen);
   };
@@ -50,25 +54,24 @@ const Nav = () => {
 
   const [isMobile, setIsMobile] = useState(true);
   const searchRef = useRef(null);
-
+  
 
   useEffect(() => {
 
-
-
-      const token = Cookies.get('token') || false;
-      if (token) {
-        let decoded;
-        try {
-          decoded = jwt.decode(token);
-          console.log(decoded); // Log the decoded payload
-        } catch (error) {
-          console.error('Invalid token:', error);
-        } finally {
-          setUser(decoded);
-        }
+    const fetchUser = async () => {
+      const res = await fetch('/api/me')
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data)
       }
-    
+    }
+
+    fetchUser();
+
+
+
+
+  
 
     
 
@@ -118,6 +121,9 @@ const Nav = () => {
       setLoadingSearch(false);
     }
   }, 500); // 500ms debounce delay
+
+
+
 
 
 
@@ -237,10 +243,13 @@ max-md:left-1/2 max-md:-translate-x-1/2 max-md:w-[95%] max-md:top-32 overflow-x-
         {/* Login Button */}
         <button
           type="button"
-          onClick={loginClick}
+
+          onClick={user ? userClick :  loginClick }
           className="right-15 top-5 absolute rounded-sm bg-white p-2 font-bold text-black active:bg-sky-400 cursor-pointer"
           aria-label="Log in"
         >
+
+          
          {user ? user.userName : "Log in"}
         </button>
       </nav>
@@ -251,7 +260,19 @@ max-md:left-1/2 max-md:-translate-x-1/2 max-md:w-[95%] max-md:top-32 overflow-x-
 
       {/* Login Modal */}
 
-      {user ? null : (
+
+
+      {user ? (<UserMenu isUserLoginOpen={isUserLoginOpen}     />
+      )
+
+
+
+
+
+
+
+
+      : (
 
       <Login isLoginOpen={isLoginOpen} setIsLoginOpen={setIsLoginOpen} />
       )}

@@ -1,13 +1,13 @@
 
 
-import Nav from "../components/index/nav";
-import Main from "../components/index/main";
+import Nav from "../components/page/navigation/nav";
+import Main from "../components/page/main/main";
 
 export default function Home() {
 
   return (
     <>
-      <Nav  />
+ 
       <Main />
     </>
   );
