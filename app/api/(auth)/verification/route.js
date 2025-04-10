@@ -24,7 +24,6 @@ export async function POST(req) {
       });
     }
 
-
     const emailValidationResponse = await emailValidation(email);
     if (!emailValidationResponse.ok) {
       return emailValidationResponse; 

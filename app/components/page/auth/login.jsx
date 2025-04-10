@@ -14,6 +14,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useForm } from "react-hook-form";
 import Cookies from 'js-cookie';
+import LoadingDots from '@/app/components/loading/LoadingDots';
 
 
 
@@ -22,11 +23,10 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
   const [isPassShown, setIsPassShown] = useState(false);
   const [isSignInPassShown, setIsSignInPassShown] = useState(false);
   const [isSignInReEnterPassShown, setIsSignInReEnterPassShown] = useState(false);
+  const [loginLoading,setLoginLoading] = useState(false)
+  const [signupLoading,setSignupLoading] = useState(false)
 
   const loginClick = () => setIsLoginOpen(false);
-
-
-
 
 
   const loginForm = useRef(null);
@@ -146,15 +146,8 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
 
     });
 
-
-
   }
 
-
-
-
-
-  
   const handleSignUpSubmit = async (data,event) => {
   
     event.preventDefault(); 
@@ -204,15 +197,9 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
         console.error("Error during signup:", error);
         alert("Something went wrong. Please try again later.");
       }
-  
-    
-   
     }
     
      else if (buttonClicked === "Sign up") {
-
-  
-    
 
       let hasError = false;
     
@@ -238,7 +225,6 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
         setError("reEnterPassword", { type: "mismatch", message: "Passwords do not match" });
         hasError = true;
       }
-
 
       if (!data.verifyCode) {
         setError("verifyCode", { type: "required", message: "Code is required" });
@@ -275,41 +261,30 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
               setError("email", { type: "required", message: result.emailMessage });
 
             }
-
-
-            
            if("passwordMessage" in result){
             setError("password", { type: "required", message: result.passwordMessage });
             setError("reEnterPassword", { type: "required", message: result.passwordMessage });
             passwordAlert(result.alertPassMessage);
-
           }
-        
-       
           } else {
             const result = await res.json();
             verificationCodeAlert(result.message);
         
           }
-
         }
         
       } catch (error) {
         console.error("Error during signup:", error);
         alert("Something went wrong. Please try again later.");
       }
-      
-
     }
-
-
   };
-
 
   const handleLoginSubmit = async (data,event) => {
   
     event.preventDefault(); 
     if(data){
+      setLoginLoading(true);
 
 
       const res = await fetch('/api/login', {
@@ -324,6 +299,7 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
       });
 
       if(res.ok){
+  
 
         window.location.reload();
       }
@@ -332,7 +308,7 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
         console.log(result.message)
       }
 
-     
+      setLoginLoading(false);
   
 
       
@@ -454,11 +430,12 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                 </div>
 
                 {/* Submit Button */}
-                <input
-                  className="bg-sky-950 w-1/3 place-self-center rounded-lg p-2 text-white cursor-pointer"
-                  type="submit"
-                  value="Log in"
-                />
+                <button
+  className="bg-sky-950 w-1/3 place-self-center grid place-items-center rounded-lg p-2 text-white cursor-pointer"
+  type="submit"
+>
+  {loginLoading ? <LoadingDots /> : "Log in"}
+</button>
 
                 <p className="text-center">
                   Don't have an account? <span onClick={signinCLick}  className="cursor-pointer">Sign up</span>

@@ -21,7 +21,7 @@ function AnimeContainer({ loading, animeList, page }) {
       </section>
 
       {!loading && (
-        <Suspense fallback={<div>Loading pagination...</div>}>
+        <Suspense fallback={<div></div>}>
           <Pagination currentPage={page} totalPages={animeList.totalPages} />
         </Suspense>
       )}

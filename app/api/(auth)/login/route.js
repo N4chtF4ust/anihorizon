@@ -68,8 +68,8 @@ export async function POST(req) {
     
     response.cookies.set('anihorizon_token', token, {
       httpOnly: true,
-      secure:  process.env.NODE_ENV === 'production',
-      sameSite: 'None',
+      secure: true,
+      sameSite: 'Strict',
       path: '/',
 
     
