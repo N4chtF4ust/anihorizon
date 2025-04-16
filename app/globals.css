@@ -59,13 +59,26 @@ body{
 
 /* Log in and Sign Up */
 
-.signUpError{
+.Error{
   @apply outline-red-600 text-red-600;
 }
 
-.signUpErrorParagraph{
+.ErrorParagraph{
   @apply text-red-600 ;
 }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  background-color: transparent !important;
+  -webkit-box-shadow: 0 0 0 50px transparent inset;
+
+  transition: background-color 5000s ease-in-out 0s !important;
+
+}
+
+
 
 
 

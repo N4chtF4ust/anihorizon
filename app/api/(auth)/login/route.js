@@ -36,7 +36,7 @@ export async function POST(req) {
     if (!user) {
       console.error('User not found for email:', email);
       return new Response(
-        JSON.stringify({ message: 'User not found' }),
+        JSON.stringify({ messageEmail: 'Email not found' }),
         { status: 404 }
       );
     }
@@ -48,7 +48,7 @@ export async function POST(req) {
     if (!isMatch) {
       console.error('Invalid credentials for user:', email);
       return new Response(
-        JSON.stringify({ message: 'Invalid credentials' }),
+        JSON.stringify({ messagePassword: 'Incorrect password' }),
         { status: 401 }
       );
     }

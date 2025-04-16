@@ -4,6 +4,8 @@ import { useSearchParams, useParams, useRouter, notFound } from "next/navigation
 import _ from "lodash";
 //Components
 import  AnimeContainer  from "@/app/components/page/main/animeContainer";
+import NotFound from "@/app/not-found";
+import AdBannerHorizontal from "../ads/AdBannerHorizontal";
 
 const Main = () => {
   const { query } = useParams();
@@ -13,18 +15,11 @@ const Main = () => {
   const validQuery = query || "MostPopular";
   const [animeList, setAnimeList] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  if (!["TopAiring", "MostPopular", "RecentAdded", "LatestCompleted"].includes(validQuery)) {
-    notFound();
-    return null;
-  }
 
-  if(page > animeList.totalPages ){
-    notFound();
-    return null;
-  }
+  
 
   useEffect(() => {
+
     const fetchAnime = async () => {
       setLoading(true);
       try {
@@ -46,6 +41,15 @@ const Main = () => {
     
   }, [page, validQuery]); 
 
+  if (!["TopAiring", "MostPopular", "RecentAdded", "LatestCompleted"].includes(validQuery)) {
+   
+    return notFound();
+  }
+
+  if(page > animeList.totalPages || page < 0){
+    return   notFound();
+  }
+
   const formatText = (text) => text.match(/[A-Z][a-z]+/g).join(" ");
 
     return (
@@ -59,8 +63,18 @@ const Main = () => {
         <section className="w-3/5 max-xl:w-[95%]">
           {/* Slide Container */}
           <section className="relative h-90 w-full bg-amber-900 max-xl:h-50">
-            <div id="Slide-Wrapper" className="bg-pink-500 w-full h-90 absolute max-xl:h-50"></div>
+            <div id="Slide-Wrapper" className="bg-pink-500 w-full h-90 absolute max-xl:h-50">
+
+       
+  
+            </div>
           </section>
+
+          <section className="bg-gray-500 w-full h-1/4 mt-8 flex justify-center items-center">
+          <AdBannerHorizontal />
+
+          </section>
+      
   
           <h1 className="pl-0 p-5 font-bold text-white text-4xl">{formatText(validQuery)}</h1>
   

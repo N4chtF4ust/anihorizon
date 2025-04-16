@@ -26,12 +26,13 @@ const UserMenu = ({ isUserLoginOpen}) => {
 
   return (
     <section
-         className={`absolute bg-sky-300 mt-24 w-1/4 flex flex-col justify-evenly items-center
+         className={`absolute bg-sky-300 mt-24 w-1/8 flex flex-col justify-evenly items-center
         transition-all  text-black font-bold rounded-2xl p-4
         max-sm:w-[92%]
         max-md:w-[50%]
         max-lg:w-[50%]
         right-4
+        z-10
         
         ${isUserLoginOpen ? "" : "hidden"}`}
     >

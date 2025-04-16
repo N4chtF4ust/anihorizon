@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+"use client"
+import React, { useState, useEffect, useRef  } from "react";
+import { useRouter } from 'next/navigation'
 
 const AnimeCard = ({ anime, index  }) => {
 
@@ -11,8 +13,14 @@ const AnimeCard = ({ anime, index  }) => {
   const hoverAnimeStatus= useRef([]);
   const hoverAnimeTypes = useRef([]);
   const hoverAnimeGenres = useRef([]);
+  
   const hoverBoxes = useRef([]); 
   const CACHE_TIME = 60 * 60 * 1000 ; // 60 minutes /api/Info?id=${animeid}`
+
+  const [hoverAnimeId,setHoverAnimeId] = useState(); 
+  const [hoverAnimeTitle,setHoverAnimeTitle] = useState(); 
+  const [hoverAnimeEp,setHoverAnimeEp] = useState(); 
+  const router = useRouter();
 
   const fetchHoverAnime = async (animeid,hoverBox) => {
     const cacheKey = `fetch-data${animeid}`;
@@ -22,11 +30,11 @@ const AnimeCard = ({ anime, index  }) => {
      
         const { data, expiry } = JSON.parse(cachedItem);
         if (Date.now() < expiry) {
-            console.log("Using cached data");
+         
             return data;
         } else {
             hoverBox.querySelector("#description_hoverWrapper").classList.add("invisible");
-            console.log("Cache expired, fetching new data");
+         
             localStorage.removeItem(cacheKey);
         }
     }
@@ -54,14 +62,14 @@ const AnimeCard = ({ anime, index  }) => {
     const hoverBox = hoverBoxes.current[index];
     const bodyRect = document.body.getBoundingClientRect();
     const childRect = hoverBox.getBoundingClientRect();
-   // console.log("Hover Box: " + hoverBox.querySelector("#animeHoverTitle ").outerHTML);
+
     //Hover will fix if the hover exceeded the html body
     if (childRect.right > window.innerWidth) {
       hoverBox.classList.add("right-[50%]");
       hoverBox.classList.remove("left-[50%]");
   } 
   else if (childRect.bottom > window.innerHeight) {
-      console.log('Bottom overflow detected');
+  
   
       hoverBox.classList.add("bottom-[57%]");
       hoverBox.classList.remove("top-[43%]");
@@ -88,6 +96,13 @@ const AnimeCard = ({ anime, index  }) => {
       seasonElement.textContent = data.season;
       statusElement.textContent = data.status;
       typeElement.textContent = data.type;
+
+
+      //Will set the data
+      setHoverAnimeId(data.id);
+      setHoverAnimeTitle(data.title);
+      setHoverAnimeEp(data.episodes[0].id);//will get the id of the first episode
+
   
       // Clear existing genres and append new ones
       genreElement.textContent = "";
@@ -108,7 +123,21 @@ const AnimeCard = ({ anime, index  }) => {
       hoverBox.querySelector("#description_hoverWrapper").classList.remove("invisible");
       setHoverLoading(false);
   }
+
+
+
   };
+  const watchAnime = () => {
+    router.push(`/watch/${hoverAnimeId}?ep=${hoverAnimeEp}`);
+  };
+
+  //Wil direct to info
+  const animeInfoClick = (animeID)=>{
+    console.log(animeID)
+    router.push(`/info/${animeID}`)
+
+
+  }
   return (
     <div
       key={anime.id}
@@ -116,7 +145,10 @@ const AnimeCard = ({ anime, index  }) => {
       onMouseEnter={(event) => handleMouseEnter(event, index, anime.id)}
       className="anime-image-wrapper relative cursor-pointer"
     >
-      <div className="anime-card group">
+      <div className="anime-card group"
+      
+    
+      >
         {anime.sub > 0 && <h1 className="episode-top-left"> EP {anime.sub}</h1>}
         
         <svg
@@ -139,6 +171,7 @@ const AnimeCard = ({ anime, index  }) => {
           />
         </svg>
         <img
+              onClick={() => animeInfoClick(anime.id)}
           src={anime.image}
           alt="Anime Thumbnail"
           className="h-full w-full group-hover:brightness-50 group-hover:blur-sm transition-all object-cover"
@@ -237,7 +270,7 @@ const AnimeCard = ({ anime, index  }) => {
               Genre: <span className="font-normal"></span>
             </h3>
             <div id="button_wrapper" className="w-full flex justify-between">
-              <button
+              <button onClick={watchAnime}
                 type="button"
                 className="rounded-lg text-black bg-white p-3 cursor-pointer flex justify-center gap-2 items-center"
               >

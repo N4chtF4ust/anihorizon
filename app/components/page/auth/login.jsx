@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect,useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Swal from 'sweetalert2';
@@ -15,28 +13,26 @@ import {
 import { useForm } from "react-hook-form";
 import Cookies from 'js-cookie';
 import LoadingDots from '@/app/components/loading/LoadingDots';
-
-
-
+import { useRouter } from 'next/navigation';
 
 const Login = ({ isLoginOpen, setIsLoginOpen }) => {
+
+  const router = useRouter();
+
   const [isPassShown, setIsPassShown] = useState(false);
   const [isSignInPassShown, setIsSignInPassShown] = useState(false);
   const [isSignInReEnterPassShown, setIsSignInReEnterPassShown] = useState(false);
   const [loginLoading,setLoginLoading] = useState(false)
   const [signupLoading,setSignupLoading] = useState(false)
+  const [verificationLoading,setVerificationLoading] = useState(false)
 
   const loginClick = () => setIsLoginOpen(false);
-
-
   const loginForm = useRef(null);
   const signInForm = useRef(null);
   const signinCLick=()=>{
       loginForm.current.classList.toggle("translate-x-[-100%]")
       signInForm.current.classList.toggle("translate-x-[-100%]");
-
   }
-
 
   const { register, handleSubmit, formState: { errors },clearErrors,
   setError, } = useForm();
@@ -63,10 +59,6 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
   }, [timer]);
 
   const startTimer = () => {
-
-    //setTimer(2);
-    //Cookies.set('resendTimer', Date.now(), { expires: 2 / 86400 }); // Expires in 2 seconds
-
     setTimer(60);
     Cookies.set('resendTimer', Date.now(), { expires: 1 / 1440 }); // Expires in 1 minute
   };
@@ -148,48 +140,44 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
 
   }
 
+  //Function Button
   const handleSignUpSubmit = async (data,event) => {
-  
+
     event.preventDefault(); 
     // Get the clicked button
     const buttonClicked = event.nativeEvent.submitter?.value;
-
   
     if(!data.email){
+      //If the data doesnt have any value it will make an error message
       setError("email", { type: "required", message: "Email is required" });
     }
-
-
+     
     if (buttonClicked === "Send Code") {
-      startTimer();
-
+      //If the user click  the send code
       try {
-
         if(data.email){
+          setVerificationLoading(true);
+         
           const res = await fetch('/api/verification', {
             method: 'POST',  // POST request
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: data.email.toString() }),
+            headers: { 'Content-Type': 'application/json' }, //Json format
+            body: JSON.stringify({ email: data.email.toString() }), // The data that will be sent to the backend
           });
 
-          if (!res.ok) {
+          if (!res.ok) { //If the result has an error
             const result = await res.json();
-
             if("message" in result){
               setError("email", { type: "required", message: result.message });
-
             }
           
             if ("rateLimitMessage" in result) {
               rateLimitCodeAlert(result.rateLimitMessage);
-
             }
-       
-          } else {
+          } else { //If the result has no error
             const result = await res.json();
             verificationCodeAlert(result.message);
-        
           }
+          startTimer();
 
         }
         
@@ -197,12 +185,13 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
         console.error("Error during signup:", error);
         alert("Something went wrong. Please try again later.");
       }
-    }
-    
-     else if (buttonClicked === "Sign up") {
 
+      setVerificationLoading(false);
+   
+    }
+  
+     else if (buttonClicked === "Sign up") {
       let hasError = false;
-    
       // Check for empty fields
       if (!data.name) {
         setError("name", { type: "required", message: "Username is required" });
@@ -238,6 +227,7 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
       try {
 
         if(data){
+          setSignupLoading(true);
           const res = await fetch('/api/signup', {
             method: 'POST',  // POST request
             headers: { 'Content-Type': 'application/json' },
@@ -255,6 +245,7 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
         
             if ("codeMessage" in result) {
               setError("verifyCode", { type: "required", message: result.codeMessage });
+              
             }
 
            if("emailMessage" in result){
@@ -277,53 +268,58 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
         console.error("Error during signup:", error);
         alert("Something went wrong. Please try again later.");
       }
+      setSignupLoading(false);
     }
   };
 
   const handleLoginSubmit = async (data,event) => {
-  
+
     event.preventDefault(); 
+    let hasError = false;
+
+    if(!data.emailLogin){
+      setError("emailLogin", { type: "required", message: "Email is required" });
+      hasError=true;
+    }
+
+    if(!data.passwordLogin){
+      setError("passwordLogin", { type: "required", message: "Password is required" });
+      hasError=true;
+    }
+
+    if (hasError) return;
     if(data){
+    
       setLoginLoading(true);
-
-
       const res = await fetch('/api/login', {
         method: 'POST',  
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
            email: data.emailLogin.toString(),
            password:  data.passwordLogin.toString(),
-          
-          
           }),
       });
 
-      if(res.ok){
-  
-
-        window.location.reload();
+      if (res.ok) {
+        window.location.href = window.location.pathname;
       }
       else{
         const result = await res.json();
-        console.log(result.message)
-      }
+        if("messageEmail" in result){
+          setError("emailLogin", { type: "required", message: result.messageEmail });
+
+        }
+        if("messagePassword" in result){
+          setError("passwordLogin", { type: "required", message: result.messagePassword });
+        }
+
+        }
 
       setLoginLoading(false);
-  
-
-      
-
-
-
-  
   
   }
 
 }
-
-  
-
-
 
   return (
     <>
@@ -382,9 +378,15 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                 <h1 className="font-bold text-3xl self-center">Login</h1>
 
                 {/* Email Input */}
-                <section className="relative bg-sky-300 w-full flex items-center outline-1 focus-within:outline-sky-950">
+                <section className={`
+                   ${errors.emailLogin ? "Error" : " "} 
+                
+                 relative bg-sky-300 w-full
+                 flex items-center outline-1
+                  focus-within:outline-sky-950`}
+                >
                   <input
-                    className="peer w-[90%] p-2  focus:outline-0 transition-all duration-300"
+                    className="peer w-[90%] p-2  focus:outline-0 transition-all duration-300 "
                     type="email"
                     id="email"
                     placeholder=""
@@ -399,9 +401,16 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                     Email
                   </label>
                 </section>
+                {errors.emailLogin && <p className="ErrorParagraph">{errors.emailLogin.message}</p>}
 
                 {/* Password Input */}
-                <section className="relative bg-sky-300 w-full flex items-center outline-1 focus-within:outline-sky-950">
+                <section className={`
+                  ${errors.passwordLogin ? "Error" : " "} 
+                  relative bg-sky-300 w-full flex items-center
+                  outline-1 focus-within:outline-sky-950`}
+                
+                >
+
                   <input
                     className="peer w-[90%] p-2 pr-10 focus:outline-0 transition-all duration-300"
                     type={isPassShown ? "text" : "password"}
@@ -423,6 +432,8 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                     Password
                   </label>
                 </section>
+                {errors.passwordLogin && <p className="ErrorParagraph">{errors.passwordLogin.message}</p>}
+
 
                 {/* Forgot password */}
                 <div className="w-full">
@@ -431,11 +442,11 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
 
                 {/* Submit Button */}
                 <button
-  className="bg-sky-950 w-1/3 place-self-center grid place-items-center rounded-lg p-2 text-white cursor-pointer"
-  type="submit"
->
-  {loginLoading ? <LoadingDots /> : "Log in"}
-</button>
+                  className="bg-sky-950 w-1/3 place-self-center grid place-items-center rounded-lg p-2 text-white cursor-pointer"
+                  type="submit"
+                >
+                  {loginLoading ? <LoadingDots /> : "Log in"}
+                </button>
 
                 <p className="text-center">
                   Don't have an account? <span onClick={signinCLick}  className="cursor-pointer">Sign up</span>
@@ -451,22 +462,17 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
 
                 {/* Username */}
                 <section className={`
-                ${errors.name ? "signUpError" : " "} 
+                ${errors.name ? "Error" : " "} 
                   
                   "relative bg-sky-300 w-full flex items-center
                   text-sky-950
                    outline-1 "
                   `}>
 
-                    
-
                   <input className="peer w-[90%] p-2 focus:outline-0 transition-all duration-300" type="text" id="username" placeholder=""
                   {...register("name")}
                   />
-                  <FontAwesomeIcon className=" w-[10%]" icon={faUser}
-                  
-                  
-                  />
+                  <FontAwesomeIcon className=" w-[10%]" icon={faUser}/>
                   <label
                     htmlFor="username"
                     className="absolute left-4 bg-sky-300 pl-1 pr-1 select-none transition-all duration-300 peer-not-placeholder-shown:-translate-y-5 peer-focus:-translate-y-5"
@@ -475,20 +481,20 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                   </label>
                 </section>
 
-                {errors.name && <p className="signUpErrorParagraph">{errors.name.message}</p>}
+                {errors.name && <p className="ErrorParagraph">{errors.name.message}</p>}
 
                 {/* Email */}
                 <section className={`
-
-                  ${errors.email ? "signUpError" : " "} 
-                  relative bg-sky-300 w-full text-sky-950
-                 flex items-center outline-1 
-                  
+                  ${errors.email ? "Error" : " "} 
+                  relative bg-sky-300 w-full flex items-center
+                  outline-1 focus-within:outline-sky-950 text-sky-950
                   `}>
-                  <input className="peer w-[90%] p-2 focus:outline-0 transition-all duration-300" type="email" id="signUpEmail" placeholder="" 
-                   {...register("email")}
-           
-                  
+
+                  <input className={`
+                    ${errors.email ? "text-red-600" : ""} 
+                 
+                  peer w-[90%] p-2 focus:outline-0 transition-all duration-300`} type="email" id="signUpEmail" placeholder="" 
+                    {...register("email")}
                   />
                   
                   <FontAwesomeIcon className=" w-[10%]" icon={faEnvelope} />
@@ -500,11 +506,10 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                   </label>
                   
                 </section>
-                {errors.email && <p className="signUpErrorParagraph">{errors.email.message}</p>}
+                {errors.email && <p className="ErrorParagraph">{errors.email.message}</p>}
       
-
                 {/* Password */}
-                <section className={`  ${errors.password ? "signUpError" : " "} 
+                <section className={`  ${errors.password ? "Error" : " "} 
                 relative bg-sky-300 w-full flex items-center
                  outline-1 focus-within:outline-sky-950 text-sky-950`}>
                   <input
@@ -513,9 +518,6 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                     type={isSignInPassShown ? "text" : "password"}
                     id="signUpPassword"
                     placeholder=""
-                    
-                    
-                  
                   />
                   <FontAwesomeIcon className=" w-[10%]" icon={faLock} />
                   <FontAwesomeIcon
@@ -532,13 +534,14 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                     Password
                   </label>
                 </section>
-                {errors.password && <p className="signUpErrorParagraph">{errors.password.message}</p>}
+                {errors.password && <p className="ErrorParagraph">{errors.password.message}</p>}
 
                 {/* Re-enter Password */}
-                <section className={`  ${errors.reEnterPassword ? "signUpError" : " "}
-                relative bg-sky-300 w-full
-                 flex items-center outline-1 
-                 focus-within:outline-sky-950 
+                <section className={`  
+                  ${errors.reEnterPassword ? "Error" : " "}
+                  relative bg-sky-300 w-full
+                  flex items-center outline-1 
+                  focus-within:outline-sky-950 
                   text-sky-950`}
                  >
                   <input
@@ -565,11 +568,11 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                   </label>
                 </section>
 
-                {errors.reEnterPassword && <p className="signUpErrorParagraph">{errors.reEnterPassword.message}</p>}
+                {errors.reEnterPassword && <p className="ErrorParagraph">{errors.reEnterPassword.message}</p>}
 
                   {/*Verification Code */}
                   <section className={`
-                  ${errors.verifyCode ? "signUpError" : " "}
+                  ${errors.verifyCode ? "Error" : " "}
                   relative bg-sky-300 w-full flex items-center justify-evenly
       
                   outline-1 focus-within:outline-sky-950`}>
@@ -592,10 +595,22 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                    disabled={timer > 0}
                       
                   >
-                    {timer > 0 ? `${timer}` : (
-                    <FontAwesomeIcon className=" text-white cursor-pointer " icon={faPaperPlane} />
-                    )}
-                
+                      {!verificationLoading ? (
+                          timer > 0 ? (
+                              <span>{timer}</span>
+                          ):
+                              <FontAwesomeIcon className="text-white cursor-pointer" icon={faPaperPlane} />
+                               
+                        ) 
+                      :
+                      (
+                          timer > 0 ? (
+                              <span>{timer}</span>
+                          ) :
+                          <LoadingDots />
+                      )
+
+                      }
                   </button>
                   <label
                     htmlFor="signUpCode"
@@ -605,14 +620,14 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
                   </label>
                 </section>
 
-                {errors.verifyCode && <p className="signUpErrorParagraph">{errors.verifyCode.message}</p>}
+                {errors.verifyCode && <p className="ErrorParagraph">{errors.verifyCode.message}</p>}
 
                 {/* Submit Button */}
 
-                <button className="bg-sky-950 w-1/3 place-self-center rounded-lg p-2 text-white cursor-pointer" 
+                <button className="bg-sky-950 w-1/3 place-self-center rounded-lg p-2 text-white cursor-pointer grid place-items-center" 
                 type="submit" value="Sign up"
                 >
-                  Sign up
+                {signupLoading ? <LoadingDots /> : "Sign up"}
 
                 </button>
              

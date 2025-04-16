@@ -122,13 +122,6 @@ const Nav = () => {
     }
   }, 500); // 500ms debounce delay
 
-
-
-
-
-
-
-
   return (
     <>
       <nav className="  bg-amber- absolute top-0 w-full h-20 text-white z-10    ">
@@ -143,7 +136,7 @@ const Nav = () => {
 
           {/* Search Wrapper */}
           <FontAwesomeIcon
-  className={` bg-amber-  relative left-4 max-md:left-0  text-3xl w-7 h-7 transition-colors ${isMobile ? (isSearchOpen ? "text-sky-400" : "") : ""}`}
+  className={` bg-amber-  relative left-4 max-md:left-0  text-3xl w-7 h-7 transition-colors ${isMobile ? (isSearchOpen ? "text-sky-300" : "") : ""}`}
   icon={faMagnifyingGlass}
   onClick={isMobile ? searchClick : undefined}
 />
@@ -232,8 +225,8 @@ max-md:left-1/2 max-md:-translate-x-1/2 max-md:w-[95%] max-md:top-32 overflow-x-
             {[...Array(3)].map((_, i) => (
               <div
                 key={i}
-                className={`w-full h-1 transition duration-300 ${
-                  isMenuOpen ? "bg-sky-400" : "bg-white"
+                className={`w-full h-1  ${
+                  isMenuOpen ? "bg-sky-300" : "bg-white"
                 }`}
               />
             ))}
@@ -249,28 +242,17 @@ max-md:left-1/2 max-md:-translate-x-1/2 max-md:w-[95%] max-md:top-32 overflow-x-
           aria-label="Log in"
         >
 
-          
          {user ? user.userName : "Log in"}
         </button>
       </nav>
 
-    
       {/* Sidebar Menu */}
       <Menu isMenuOpen={isMenuOpen} />
 
       {/* Login Modal */}
 
-
-
       {user ? (<UserMenu isUserLoginOpen={isUserLoginOpen}     />
       )
-
-
-
-
-
-
-
 
       : (
 

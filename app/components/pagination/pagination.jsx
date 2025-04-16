@@ -26,7 +26,7 @@ const Pagination = ({ totalPages }) => {
     <div className="flex justify-center space-x-2 mt-4 text-black ">
       <button
         onClick={() => goToPage(currentPage - 1)}
-        disabled={currentPage === 1}
+        disabled={currentPage <= 1}
         className="cursor-pointer px-4 py-2 bg-white rounded disabled:bg-white/10 disabled:text-white disabled:cursor-not-allowed"
       >
         Prev
