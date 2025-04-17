@@ -79,6 +79,15 @@ input:-webkit-autofill:active {
 }
 
 
+.hide-cursor {
+  cursor: none;
+}
+
+
+
+
+
+
 
 
 

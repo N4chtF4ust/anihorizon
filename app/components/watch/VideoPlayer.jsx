@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import LoadingSpinner from "@/app/components/loading/loading";
 
 import {
     faPause,
@@ -10,7 +11,8 @@ import {
     faClosedCaptioning,
     faExpand,
     faCompress,
-
+    faEllipsisVertical,
+    faGear,
 } from "@fortawesome/free-solid-svg-icons";
 
 const VideoPlayer = ({ videoData }) => {
@@ -26,7 +28,12 @@ const VideoPlayer = ({ videoData }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [controlsVisible, setControlsVisible] = useState(true);
-  const [idleTimeout, setIdleTimeout] = useState(null);
+  const idleTimeoutRef = useRef(null); 
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [availableQualities, setAvailableQualities] = useState([]);
+  const [currentQuality, setCurrentQuality] = useState('auto');
+  const hlsRef = useRef(null);
 
   const handleSkipIntro = () => {
     if (videoRef.current) {
@@ -42,28 +49,35 @@ const VideoPlayer = ({ videoData }) => {
 
   const handleFullscreen = () => {
     const panel = panelRef.current;
-    if (panel.requestFullscreen) {
-      panel.requestFullscreen();
-    } else if (panel.webkitRequestFullscreen) {
-      panel.webkitRequestFullscreen();
-    } else if (panel.mozRequestFullScreen) {
-      panel.mozRequestFullScreen();
-    } else if (panel.msRequestFullscreen) {
-      panel.msRequestFullscreen();
-    }
+    if (!panel) return;
+  
+    setTimeout(() => {
+      if (panel.requestFullscreen) {
+        panel.requestFullscreen();
+      } else if (panel.webkitRequestFullscreen) {
+        panel.webkitRequestFullscreen();
+      } else if (panel.mozRequestFullScreen) {
+        panel.mozRequestFullScreen();
+      } else if (panel.msRequestFullscreen) {
+        panel.msRequestFullscreen();
+      }
+    }, 0);
   };
-
+  
   const handleExitFullscreen = () => {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    } else if (document.mozCancelFullScreen) {
-      document.mozCancelFullScreen();
-    } else if (document.msExitFullscreen) {
-      document.msExitFullscreen();
-    }
+    setTimeout(() => {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    }, 0);
   };
+  
 
   const handleFullscreenChange = () => {
     const fsElement =
@@ -71,28 +85,66 @@ const VideoPlayer = ({ videoData }) => {
       document.webkitFullscreenElement ||
       document.mozFullScreenElement ||
       document.msFullscreenElement;
+  
     setIsFullscreen(!!fsElement);
+  };
+
+  const handleQualityChange = (e) => {
+    const quality = e.target.value;
+    setCurrentQuality(quality);
+    
+    if (!hlsRef.current) return;
+    
+    if (quality === 'auto') {
+      hlsRef.current.currentLevel = -1; // Auto quality
+    } else {
+      // Find level index that matches the selected height
+      const height = parseInt(quality);
+      const levelIndex = hlsRef.current.levels.findIndex(level => level.height === height);
+      if (levelIndex !== -1) {
+        hlsRef.current.currentLevel = levelIndex;
+      }
+    }
   };
 
   useEffect(() => {
     const video = videoRef.current;
     const hls = new Hls();
-
+    hlsRef.current = hls;
+  
+    // Reset loading state when videoData changes
+    setIsLoading(true);
+  
     if (video && Hls.isSupported()) {
       const proxyUrl = `/api/proxy?url=${videoData.sources[0].url}`;
       hls.loadSource(proxyUrl);
       hls.attachMedia(video);
+  
+      hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+        setIsLoading(false); // done loading when manifest is parsed
+        
+        // Process available qualities
+        if (data.levels && data.levels.length > 0) {
+          // Extract unique resolutions
+          const qualities = data.levels.map(level => level.height);
+          const uniqueQualities = [...new Set(qualities)].sort((a, b) => b - a); // Sort in descending order
+          setAvailableQualities(uniqueQualities);
+        }
+      });
     }
-
+  
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
-
+  
     return () => {
       hls.destroy();
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
     };
   }, [videoData]);
+
+  
+  
 
   const handleTimeUpdate = () => {
     const video = videoRef.current;
@@ -195,47 +247,79 @@ const VideoPlayer = ({ videoData }) => {
   };
 
   const resetIdleTimeout = () => {
-    if (idleTimeout) clearTimeout(idleTimeout);
+    if (idleTimeoutRef.current) {
+      clearTimeout(idleTimeoutRef.current);
+    }
     setControlsVisible(true);
-    const timeout = setTimeout(() => {
+
+    idleTimeoutRef.current = setTimeout(() => {
       setControlsVisible(false);
-    }, 3000);
-    setIdleTimeout(timeout);
+    }, 5000);
   };
 
   useEffect(() => {
     const panel = panelRef.current;
     const video = videoRef.current;
 
+    if (!panel || !video) return;
+
     const handleUserInteraction = () => {
       resetIdleTimeout();
     };
 
+    // Attach events
     panel.addEventListener('mousemove', handleUserInteraction);
     panel.addEventListener('mousedown', handleUserInteraction);
     panel.addEventListener('keydown', handleUserInteraction);
+
+    panel.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    panel.addEventListener('touchmove', handleUserInteraction, { passive: true });
+    panel.addEventListener('touchend', handleUserInteraction, { passive: true });
+
     video.addEventListener('play', handleUserInteraction);
     video.addEventListener('pause', handleUserInteraction);
     video.addEventListener('seeked', handleUserInteraction);
 
+    // Start timeout initially
+    resetIdleTimeout();
+
     return () => {
-      clearTimeout(idleTimeout);
+      clearTimeout(idleTimeoutRef.current);
+
       panel.removeEventListener('mousemove', handleUserInteraction);
       panel.removeEventListener('mousedown', handleUserInteraction);
       panel.removeEventListener('keydown', handleUserInteraction);
+
+      panel.removeEventListener('touchstart', handleUserInteraction);
+      panel.removeEventListener('touchmove', handleUserInteraction);
+      panel.removeEventListener('touchend', handleUserInteraction);
+
       video.removeEventListener('play', handleUserInteraction);
       video.removeEventListener('pause', handleUserInteraction);
       video.removeEventListener('seeked', handleUserInteraction);
     };
-  }, [idleTimeout]);
+  }, []); 
+  
+
+
 
   return (
-    <div ref={panelRef} className="relative bg-black w-full aspect-video overflow-hidden">
+    <>
+
+    <div ref={panelRef} className="relative bg-black w-full aspect-video overflow-hidden
+    pb-1 pt-1
+    ">
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black bg-opacity-70 text-white">
+           <LoadingSpinner LoadingColor="#FFFFFF" strokeColor="#FFFFFF" />
+        </div>
+      )}
+
       <video
         ref={videoRef}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        className="w-full h-full"
+        className="w-full h-full "
         controls={false}
         controlsList="nofullscreen"
         autoPlay
@@ -252,12 +336,12 @@ const VideoPlayer = ({ videoData }) => {
       </video>
 
       {(showIntroButton || showOutroButton) && (
-        <div className="bg-pink-500 absolute bottom-30 left-0 right-0 flex justify-between px-4 z-50 pointer-events-none">
+        <div className="bg-pink-500 absolute bottom-30 left-0 right-0 flex justify-between px-4 z-20 pointer-events-none">
           {showIntroButton && (
             <button
               onClick={handleSkipIntro}
-              className="bg-sky-300 text-black font-bold cursor-pointer px-4 py-2 rounded shadow pointer-events-auto absolute right-5
-              max-md:text-sm
+              className="bg-gray-800  font-bold cursor-pointer px-4 py-2 rounded shadow pointer-events-auto absolute right-5
+              max-md:text-sm text-white
               "
             >
               Skip Intro
@@ -266,7 +350,7 @@ const VideoPlayer = ({ videoData }) => {
           {showOutroButton && (
             <button
               onClick={handleSkipOutro}
-              className="bg-sky-300 text-black font-bold cursor-pointer
+              className="bg-gray-800  font-bold cursor-pointer text-white
                px-4 py-2 rounded shadow pointer-events-auto absolute right-4
                max-md:text-sm"
             >
@@ -277,16 +361,134 @@ const VideoPlayer = ({ videoData }) => {
       )}
 
       {controlsVisible && (
-        <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4 flex flex-wrap gap-4 items-center justify-center text-white z-50">
+<>
+<button
+  onClick={handlePlayPause}
+  className="
+    absolute top-1/2 left-1/2 -translate-1/2
+    text-4xl
+    bg-gray-800
+    px-4 py-2
+    z-10
+
+    rounded-full
+
+    "
+
+
+>
+  {isPlaying ? (
+    <><FontAwesomeIcon icon={faPause} /></>
+  ) : (
+    <><FontAwesomeIcon icon={faPlay} /></>
+  )}
+</button>
+
+
+
+
+        <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4
+         flex flex-nowrap gap-4 items-center justify-center text-white z-10
+         max-md:h-10 
+         
+      
+         ">
+
+<div className="relative  text-left z-50 ">
+            {/* Popover trigger */}
+            <button
+              onClick={() => setIsPopoverOpen(!isPopoverOpen)}
+              className="text-white px-2 "
+            >
+              <FontAwesomeIcon icon={faEllipsisVertical} />
+            </button>
+
+            {/* Popover content */}
+            {isPopoverOpen && (
+              <div
+                className="absolute translate-x-[0] mt-2 -top-40 rounded-lg shadow-lg bg-gray-900 ring-1 ring-white/10 focus:outline-none
+                flex flex-col gap-2 p-3 text-white text-sm
+                max-md:-top-30
+                "
+              >
+                {/* Resolution Quality */}
+                <div className="flex items-center justify-between">
+                  <label className="mr-2 flex items-center gap-1 max-md:text-[.5rem]">
+                    <FontAwesomeIcon icon={faGear} />
+                    Quality
+                  </label>
+                  <select
+                    value={currentQuality}
+                    onChange={handleQualityChange}
+                    className="bg-gray-800 text-white px-2 py-1 rounded max-md:text-[.5rem]"
+                  >
+                    <option value="auto">Auto</option>
+                    {availableQualities.map((quality) => (
+                      <option key={quality} value={quality}>
+                        {quality}p
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Playback Rate */}
+                <div className="flex items-center justify-between">
+                  <label className="mr-2 flex items-center gap-1 max-md:text-[.5rem]">
+                    <FontAwesomeIcon icon={faForwardFast} />
+                    Speed
+                  </label>
+                  <select
+                    value={playbackRate}
+                    onChange={handleSpeedChange}
+                    className="bg-gray-800 text-white px-2 py-1 rounded max-md:text-[.5rem]"
+                  >
+                    <option value="0.5">0.5x</option>
+                    <option value="1">1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                  </select>
+                </div>
+
+                {/* Subtitles */}
+                <div className="flex items-center justify-between">
+                  <label className="mr-2 flex items-center gap-1 max-md:text-[.5rem]">
+                    <FontAwesomeIcon icon={faClosedCaptioning} />
+                    Subtitles
+                  </label>
+                  <select
+                    value={selectedSubtitle}
+                    onChange={handleSubtitleChange}
+                    className="bg-gray-800 text-white text-sm px-2 py-1 rounded truncate max-w-[15ch] max-md:text-[.5rem]"
+                  >
+                    <option value="">No Subtitle</option>
+                    {[...new Map(
+                      videoData.subtitles
+                        .filter(sub => sub.lang && sub.lang !== "thumbnails" && typeof sub.lang === 'string')
+                        .map(sub => [sub.lang.trim(), sub])
+                    ).values()].map((subtitle, index) => (
+                      <option key={index} value={subtitle.lang}>
+                        {subtitle.lang}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+       
+
           <button
             onClick={handlePlayPause}
-            className="bg-gray-800 px-4 py-2 rounded"
+            className=" "
           >
             {isPlaying ? (<><FontAwesomeIcon icon={faPause} /></>) : (<><FontAwesomeIcon icon={faPlay} /></>)}
           </button>
 
-          <div className="flex items-center gap-2">
-            <span>{formatTime(currentTime)}</span>
+          <div className="flex items-center gap-2 w-[40%] relative
+          
+           max-lg:w-[50%]">
+            <span  className='max-md:text-[10px]'>{formatTime(currentTime)}</span>
             <input
               type="range"
               min={0}
@@ -294,16 +496,19 @@ const VideoPlayer = ({ videoData }) => {
               step={0.1}
               value={currentTime}
               onChange={handleSeek}
-              className="w-48"
+              className="w-[75%]
+           "
             />
-            <span>{formatTime(duration)}</span>
+            <span  className='max-md:text-[10px]' >{formatTime(duration)}</span>
           </div>
 
-          <div>
-            <label className="mr-2">
- 
-
- <FontAwesomeIcon icon={faVolumeHigh} /></label>
+          <div  className='flex justify-center items-center
+           w-[15%] relative  
+           max-lg:w-[25%]
+          '>
+            <label className="mr-2 ">
+              <FontAwesomeIcon icon={faVolumeHigh} />
+            </label>
             <input
               type="range"
               min={0}
@@ -311,60 +516,33 @@ const VideoPlayer = ({ videoData }) => {
               step={0.01}
               value={volume}
               onChange={handleVolumeChange}
-              className="w-32"
+              className="w-[90%]"
+             
             />
           </div>
 
-          <div>
-            <label className="mr-2"><FontAwesomeIcon icon={faForwardFast} /></label>
-            <select
-              value={playbackRate}
-              onChange={handleSpeedChange}
-              className="bg-gray-800 text-white px-2 py-1 rounded"
-            >
-              <option value="0.5">0.5x</option>
-              <option value="1">1x</option>
-              <option value="1.5">1.5x</option>
-              <option value="2">2x</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="mr-2">
-
- <FontAwesomeIcon icon={faClosedCaptioning} /></label>
-            <select
-              value={selectedSubtitle}
-              onChange={handleSubtitleChange}
-              className="bg-gray-800 text-white text-sm px-2 py-1 rounded truncate max-w-[15ch]"
-            >
-              <option value=""  >No Subtitle</option>
-              {[...new Map(videoData.subtitles.map(sub => [sub.lang, sub])).values()].map((subtitle, index) => (
-                <option key={index} value={subtitle.lang}>
-                  {subtitle.lang}
-                </option>
-              ))}
-            </select>
-          </div>
-
+         
           {!isFullscreen ? (
             <button
               onClick={handleFullscreen}
-              className="bg-gray-800 text-white px-4 py-2 rounded"
+              className="
+              "
             >
                 <FontAwesomeIcon icon={faExpand} />
             </button>
           ) : (
             <button
               onClick={handleExitFullscreen}
-              className="bg-gray-800 text-white px-4 py-2 rounded"
+              className=""
             >
-          <FontAwesomeIcon icon={faCompress} />
+              <FontAwesomeIcon icon={faCompress} />
             </button>
           )}
         </div>
-      )}
+        </>    )}
+   
     </div>
+    </>
   );
 };
 

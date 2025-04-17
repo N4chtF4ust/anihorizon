@@ -5,38 +5,8 @@ import { useSearchParams, useParams, useRouter, notFound } from "next/navigation
 import AnimeCard from "@/app/components/page/main/animeCard";
 import LoadingSpinner from "@/app/components/loading/loading";
 import DropdownPagination from "@/app/components/pagination/DropdownPagination";
-import EpButton from "@/app/components/watch/EpButton"
-
+import EpButton from "@/app/components/watch/EpButton";
 import VideoPlayer from '@/app/components/watch/VideoPlayer';
-
-
-const videoData = {
-  "intro": {
-    "start": 31,
-    "end": 111
-  },
-  "outro": {
-    "start": 1376,
-    "end": 1447
-  },
-  "sources": [
-    {
-      "url": "https://ec.netmagcdn.com:2228/hls-playback/71f87b4028d27b3ba749bd2029f3248245618a740ca81a9a9863f257784436f85c939482f4d306945639b935dc612f23e90c190103dcbf12472df149b1deebb5d59be91a84c755a66bde4e2bfd39ee61e466d5652c9ef378658a15ce03d37fb705c0793befe2be40667ecc8a1e5f48401497c392cd16eca299dbbc40ec5b1b00dfd2617bbee7170da819faf35960a5b5/master.m3u8",
-      "isM3U8": true,
-      "type": "hls"
-    }
-  ],
-  "subtitles": [
-    {
-      "url": "https://s.megastatics.com/subtitle/73fd2e74257659a8ef9b9cdd004623a5/eng-2.vtt",
-      "lang": "English"
-    },
-    {
-      "url": "https://s.megastatics.com/thumbnails/76c7d19582984c21fb4c9962b812820a/thumbnails.vtt",
-      "lang": "thumbnails"
-    }
-  ]
-};
 
 function Page() {
   const params = useParams();
@@ -44,13 +14,14 @@ function Page() {
   const router = useRouter();
 
   const { query } = useParams();
-  const ep = String(searchParams.get("ep"));
+  const ep = searchParams.get("ep") ;
+
 
   const [loading, setLoading] = useState(true);
   const [animeList, setAnimeList] = useState(null);
   const [isNotFound, setIsNotFound] = useState(false);
   const [buttonEpPagination, setButtonEpPagination] = useState(null);
-
+  const [watch, setWatch] = useState(null);
 
   // Fetch anime data
   useEffect(() => {
@@ -64,23 +35,29 @@ function Page() {
         }
         const data = await response.json();
         setAnimeList(data || []);
+        
+        // Initialize buttonEpPagination with first 100 episodes or all episodes
+        if (data && Array.isArray(data.episodes)) {
+          if (data.episodes.length > 100) {
+            setButtonEpPagination(data.episodes.slice(0, 100));
+          } else {
+            setButtonEpPagination(data.episodes);
+          }
+        }
       } catch (error) {
         console.error("Error fetching anime:", error);
       } finally {
         setLoading(false);
+   
       }
     };
 
     fetchAnime();
 
+  }, [query]);
 
-  }, []);
-
-  const [watch, setWatch] = useState(null);
-
-  const Watch = async () => {
-    console.log("Fetching data for episode:", ep);
-  
+  const fetchEpisode = async () => {
+    
     try {
       const response = await fetch(`/api/watch?ep=${ep}`);
       const data = await response.json();
@@ -92,27 +69,25 @@ function Page() {
   
   useEffect(() => {
     if (ep) {
-      Watch();
+      fetchEpisode();
+     
     }
+    
   }, [ep]);
   
   useEffect(() => {
-    if(watch){
+    if (watch) {
       console.log("Watch state updated:", watch);
 
     }
-    
-   
   }, [watch]);
 
-
-    // Handle pagination change
-    const handlePaginationChange = (items, page) => {
-      console.log("Selected Page:", page);
-      console.log("Items:", items);
-   
-      setButtonEpPagination(items);
-    };
+  // Handle pagination change - removed duplicate function
+  const handlePaginationChange = (items, page) => {
+    console.log("Selected Page:", page);
+    console.log("Items:", items);
+    setButtonEpPagination(items);
+  };
 
   // Show loading screen
   if (loading) {
@@ -128,40 +103,64 @@ function Page() {
     return notFound();
   }
 
+  if (animeList) {
+  // console.log("The data is", JSON.stringify(animeList.episodes, null, 2));
+  }
+
+  if(ep){
+    if (!animeList.episodes.some(e => e.id.toString() === ep)) {
+      return notFound();
+    }
+
+  }
+
+
+  
+
   return (
     <section className="realtive inset-0 pt-20 -z-10 flex justify-center">
       <main className="grid grid-cols-5 grid-rows-[auto] w-[80%] h-[90%] absolute grid-rows-5 gap-4 max-md:w-[90%] z-0">
         {/* Video */}
-        <div className="col-span-4 row-span-2 bg-blue-400 max-md:col-span-5">
+        <div className="col-span-4 row-span-2 bg-white/10 max-md:col-span-5">
+          {
+  
+          
+          watch ? (
+            <VideoPlayer videoData={watch} />
+          ) : (
+            <div className="min-w-[320px] min-h-[180px] w-full h-full aspect-video grid place-items-center text-white">
+             
 
-          {watch ? (<> <VideoPlayer videoData={watch} /></>) : (<></>) }
+              {!ep && (<> <h1>Please select an episodes below</h1></>)}
+            </div>
+          ) 
         
-         
-
+        
+        }
         </div>
 
         {/* Anime Info & Episodes */}
-        <div className="col-span-4 col-start-1 row-start-3 rounded-lg  max-md:col-span-5 bg-white/10 p-2">
-          {Array.isArray(animeList?.episodes) && animeList.episodes.length > 100? (
+        <div className="col-span-4 col-start-1 row-start-3 rounded-lg max-md:col-span-5 bg-white/10 p-2">
+          {Array.isArray(animeList?.episodes) && animeList.episodes.length > 100 ? (
             <>
               <DropdownPagination
                 data={animeList.episodes}
                 onChange={handlePaginationChange}
+                epParam={ep}
               />
-
-              {/*buttons */ }
-              <EpButton buttonEpPagination={buttonEpPagination} ep={ep}/>
-
-            
+              
+              {/* Only render EpButton when buttonEpPagination is available */}
+              {buttonEpPagination && (
+                <EpButton buttonEpPagination={buttonEpPagination} ep={ep} />
+              )}
             </>
-          ):(
+          ) : (
             <>
-              <EpButton buttonEpPagination={animeList.episodes} ep={ep}/>
+              {animeList?.episodes && (
+                <EpButton buttonEpPagination={animeList.episodes} ep={ep} />
+              )}
             </>
-          )
-          
-          
-          }
+          )}
         </div>
 
         {/* Recommendations */}
