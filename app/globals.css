@@ -54,7 +54,7 @@ body{
 }
 
 .description_hover{
-  @apply rounded-2xl z-20 absolute  bg-sky-300 outline-2 outline-black  backdrop-blur-md h-fit w-70 group-hover:block p-6 cursor-default ;
+  @apply rounded-2xl z-20 absolute  bg-sky-300/75   backdrop-blur-md h-fit w-90 group-hover:block p-6 cursor-default ;
 }
 
 /* Log in and Sign Up */
@@ -78,10 +78,42 @@ input:-webkit-autofill:active {
 
 }
 
-
-.hide-cursor {
+.video-panel.hide-cursor {
   cursor: none;
 }
+
+/* globals.css */
+@layer utilities {
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -150%;
+    height: 100%;
+    width: 150%;
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    100% {
+      left: 100%;
+    }
+  }
+}
+
+
+
 
 
 

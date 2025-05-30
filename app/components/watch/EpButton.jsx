@@ -24,7 +24,7 @@ function EpButton({buttonEpPagination,ep}) {
                   key={index}
                   onClick={()=>EpClick(anime.id)}
             
-                  className={`${ep === anime.id ? 'bg-sky-300' : 'bg-white'} text-black rounded-sm m-1 h-10 text-center font-bold cursor-pointer`}
+                  className={`${ep === anime.id ? 'bg-sky-300' : 'bg-white'} text-black rounded-sm  m-1 text-sm h-10 text-center font-bold cursor-pointer`}
 >
                     {anime.number}
                   </button>

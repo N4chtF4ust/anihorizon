@@ -9,7 +9,7 @@ import Login from "@/app/components/page/auth/login";
 import LoadingSpinner from "@/app/components/loading/loading";
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass,faClapperboard,faTv,faHourglass } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass,faClapperboard,faTv,faHourglass, faThList } from '@fortawesome/free-solid-svg-icons';
 import debounce from 'lodash.debounce';
 import Cookies from 'js-cookie';
 
@@ -197,7 +197,7 @@ max-md:left-1/2 max-md:-translate-x-1/2 max-md:w-[95%] max-md:top-32 overflow-x-
           <h1 className="text-black font-bold truncate pl-2">{anime.title}</h1>
           <div className="text-black flex gap-3 items-center">
             <h5 className="flex items-center gap-1">
-              <FontAwesomeIcon icon={faTv} className="font-thin pl-2" />
+              <FontAwesomeIcon icon={faThList} className="font-thin pl-2" />
               <span className="text-[.7rem]">{anime.type}</span>
             </h5>
             <h5 className="flex items-center gap-1">

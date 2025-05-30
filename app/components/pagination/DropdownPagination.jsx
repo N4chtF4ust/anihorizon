@@ -86,19 +86,7 @@ export default function CustomDropdownPagination({
 
   return (
     <>
-  
-    {data?.map((anime, index) => (
-      epParam === anime.id ? (
-      <>
-          <h1 className=" pt-2 pb-2 text-xl font-bold"
-          
-          key={index}>
-            {anime.title} 
-          
-          </h1>
-      </>
-      ) : null
-    ))}
+
 
     <div className="relative inline-block z-20">
       <button

@@ -301,7 +301,7 @@ const Login = ({ isLoginOpen, setIsLoginOpen }) => {
       });
 
       if (res.ok) {
-        window.location.href = window.location.pathname;
+        window.location.reload();
       }
       else{
         const result = await res.json();

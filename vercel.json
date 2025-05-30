@@ -1,0 +1,8 @@
+{
+    "version": 2,
+    "functions": {
+      "app/api/proxy/route.js": {
+        "runtime": "@vercel/edge@1.1.0"
+      }
+    }
+  }
